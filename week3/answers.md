@@ -53,7 +53,7 @@ Crow's Foot Notation: Pet (1) ------ (0..N) Vaccination Record
 
 
 ## Task 3 — Build the Logical ERD
-erd_diagram.png
+![Conceptual ERD](erd.diagram.png)
 
 ## Task 4 — Translate to Relational Schema Notation
 owner (owner_id, first_name, last_name, phone_number)
