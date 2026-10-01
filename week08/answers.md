@@ -14,21 +14,24 @@ For Task 1, I used LIKE with wildcards to find specific text patterns in the emp
 
 **Code / query used (if applicable):**
 ```sql
-i.  SELECT emp_id, first_name, last_name
-        FROM employee
-        WHERE last_name LIKE '%ez';
+i. 
+mysql> SELECT emp_id, first_name, last_name
+    -> FROM employee
+    -> WHERE last_name LIKE '%ez';
 
-ii. SELECT emp_id, first_name, department
-      FROM employee
-      WHERE first_name LIKE 'Ma%';
+ii. 
+mysql> SELECT emp_id, first_name, department
+    -> FROM employee
+    -> WHERE first_name LIKE 'Ma%';
 
-iii.  SELECT COUNT(*)
-        FROM employee
-        WHERE emp_code LIKE 'E____';
+iii.  
+mysql> SELECT COUNT(*)
+    -> FROM employee
+    -> WHERE emp_code LIKE 'E____';
 
-     SELECT emp_code, first_name, last_name
-        FROM employee
-        WHERE emp_code LIKE 'E_0__';     
+mysql> SELECT emp_code, first_name, last_name
+    -> FROM employee
+    -> WHERE emp_code LIKE 'E_0__';    
 ```
 
 **Evidence (screenshot filename, output, or file reference in this folder):**
@@ -397,34 +400,168 @@ We use % for keywords because it matches any number of characters, so we don't n
 ## Task 2 — Basic Aggregation
 
 **Approach / explanation:**
-_[Write 2–4 sentences describing how you solved this task.]_
+For Task 2, I used basic aggregate functions to calculate whole-table metrics like headcount, salary totals, and hire dates. I applied COALESCE to commission so that employees with NULL values wouldn't break the total compensation calculation.
 
 **Code / query used (if applicable):**
 ```sql
--- paste your SQL here
+mysql> SELECT
+    ->     COUNT(*) AS total_employees,
+    ->     COUNT(commission) AS employees_with_commission,
+    ->     SUM(salary) AS total_monthly_payroll,
+    ->     AVG(salary) AS average_salary,
+    ->     MIN(hire_date) AS earliest_hire_date,
+    ->     MAX(hire_date) AS latest_hire_date,
+    ->     SUM(salary + COALESCE(commission, 0)) AS total_compensation_with_commission
+    -> FROM employee;
 ```
 
 **Evidence (screenshot filename, output, or file reference in this folder):**
-_[e.g. `task2_output.png`, or paste console/query output here.]_
++-----------------+---------------------------+-----------------------+----------------+--------------------+------------------+------------------------------------+
+| total_employees | employees_with_commission | total_monthly_payroll | average_salary | earliest_hire_date | latest_hire_date | total_compensation_with_commission |
++-----------------+---------------------------+-----------------------+----------------+--------------------+------------------+------------------------------------+
+|             500 |                       352 |           33282250.00 |   66564.500000 | 2015-01-03         | 2026-09-14       |                        35387750.00 |
++-----------------+---------------------------+-----------------------+----------------+--------------------+------------------+------------------------------------+
+1 row in set (0.121 sec)
 
 **Reflection question:**
 _[What is the difference between `COUNT(*)` and `COUNT(column_name)`?]_
+COUNT(*) counts every row in the result set regardless of NULLs. COUNT(column_name) only counts non-NULL values inside that specific column.
 
 ## Task 3 — Grouping Data
 
 **Approach / explanation:**
-_[Write 2–4 sentences describing how you solved this task.]_
+For Task 3, I used GROUP BY to organize employee metrics by department, job title, status, and hire year. I used the YEAR() function to extract the year from hire dates and added ORDER BY to make the results easier to read.
 
 **Code / query used (if applicable):**
 ```sql
--- paste your SQL here
+i. 
+mysql> SELECT
+    ->     department,
+    ->     COUNT(*) AS employee_count,
+    ->     ROUND(AVG(salary), 2) AS avg_salary,
+    ->     SUM(salary) AS total_payroll
+    -> FROM employee
+    -> GROUP BY department
+    -> ORDER BY total_payroll DESC;
+
+ii.
+mysql> SELECT
+    ->     job_title,
+    ->     COUNT(*) AS headcount,
+    ->     MIN(salary) AS min_salary,
+    ->     MAX(salary) AS max_salary
+    -> FROM employee
+    -> GROUP BY job_title
+    -> ORDER BY headcount DESC;
+
+iii.
+mysql> SELECT
+    ->     status,
+    ->     COUNT(*) AS employee_count,
+    ->     ROUND(AVG(salary), 2) AS avg_salary
+    -> FROM employee
+    -> GROUP BY status;
+
+iv.
+mysql> SELECT
+    ->     YEAR(hire_date) AS hire_year,
+    ->     COUNT(*) AS total_hired
+    -> FROM employee
+    -> GROUP BY YEAR(hire_date)
+    -> ORDER BY hire_year ASC;
 ```
 
 **Evidence (screenshot filename, output, or file reference in this folder):**
-_[e.g. `task3_output.png`, or paste console/query output here.]_
+mysql> SELECT
+    ->     department,
+    ->     COUNT(*) AS employee_count,
+    ->     ROUND(AVG(salary), 2) AS avg_salary,
+    ->     SUM(salary) AS total_payroll
+    -> FROM employee
+    -> GROUP BY department
+    -> ORDER BY total_payroll DESC;
++-------------+----------------+------------+---------------+
+| department  | employee_count | avg_salary | total_payroll |
++-------------+----------------+------------+---------------+
+| Sales       |            144 |   71799.65 |   10339150.00 |
+| Engineering |            125 |   75160.00 |    9395000.00 |
+| Finance     |             69 |   79513.04 |    5486400.00 |
+| Support     |            112 |   44028.57 |    4931200.00 |
+| HR          |             50 |   62610.00 |    3130500.00 |
++-------------+----------------+------------+---------------+
+5 rows in set (0.025 sec)
+
+mysql> SELECT
+    ->     job_title,
+    ->     COUNT(*) AS headcount,
+    ->     MIN(salary) AS min_salary,
+    ->     MAX(salary) AS max_salary
+    -> FROM employee
+    -> GROUP BY job_title
+    -> ORDER BY headcount DESC;
++----------------------+-----------+------------+------------+
+| job_title            | headcount | min_salary | max_salary |
++----------------------+-----------+------------+------------+
+| Account Manager      |        50 |   47100.00 |   84500.00 |
+| Sales Manager        |        49 |   81350.00 |  139400.00 |
+| Sales Representative |        45 |   28300.00 |   54700.00 |
+| Software Engineer    |        44 |   56750.00 |  109850.00 |
+| Support Specialist   |        43 |   30450.00 |   51750.00 |
+| DevOps Engineer      |        42 |   60650.00 |  114950.00 |
+| Support Agent        |        40 |   22550.00 |   39800.00 |
+| QA Analyst           |        39 |   39000.00 |   69850.00 |
+| Support Lead         |        29 |   50100.00 |   78850.00 |
+| Financial Analyst    |        24 |   50850.00 |   89600.00 |
+| Finance Manager      |        24 |   89000.00 |  148650.00 |
+| Accountant           |        21 |   37100.00 |   67350.00 |
+| HR Specialist        |        20 |   32050.00 |   58550.00 |
+| HR Manager           |        18 |   76000.00 |  118950.00 |
+| Recruiter            |        12 |   30400.00 |   57550.00 |
++----------------------+-----------+------------+------------+
+15 rows in set (0.012 sec)
+
+mysql> SELECT
+    ->     status,
+    ->     COUNT(*) AS employee_count,
+    ->     ROUND(AVG(salary), 2) AS avg_salary
+    -> FROM employee
+    -> GROUP BY status;
++----------+----------------+------------+
+| status   | employee_count | avg_salary |
++----------+----------------+------------+
+| Active   |            411 |   66430.90 |
+| Inactive |             54 |   66979.63 |
+| On Leave |             35 |   67492.86 |
++----------+----------------+------------+
+3 rows in set (0.018 sec)
+
+mysql> SELECT
+    ->     YEAR(hire_date) AS hire_year,
+    ->     COUNT(*) AS total_hired
+    -> FROM employee
+    -> GROUP BY YEAR(hire_date)
+    -> ORDER BY hire_year ASC;
++-----------+-------------+
+| hire_year | total_hired |
++-----------+-------------+
+|      2015 |          35 |
+|      2016 |          37 |
+|      2017 |          32 |
+|      2018 |          42 |
+|      2019 |          50 |
+|      2020 |          53 |
+|      2021 |          47 |
+|      2022 |          48 |
+|      2023 |          45 |
+|      2024 |          45 |
+|      2025 |          35 |
+|      2026 |          31 |
++-----------+-------------+
+12 rows in set (0.048 sec)
 
 **Reflection question:**
 _[Why is it generally invalid to include columns in the `SELECT` list that are not in the `GROUP BY` clause, unless they are inside an aggregate function?]_
+Any column in the SELECT clause that isn't inside an aggregate function must be in the GROUP BY clause. Without it, SQL doesn't know which row's value to pick for the grouped results.
 
 ## Task 4 — Advanced Filtering with HAVING
 
