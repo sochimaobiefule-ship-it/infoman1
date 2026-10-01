@@ -566,18 +566,70 @@ Any column in the SELECT clause that isn't inside an aggregate function must be 
 ## Task 4 — Advanced Filtering with HAVING
 
 **Approach / explanation:**
-_[Write 2–4 sentences describing how you solved this task.]_
+For Task 4, I used HAVING to filter grouped data using aggregate metrics like headcount and average salary. This allowed me to only show departments and job titles that met specific salary and staff count conditions.
 
 **Code / query used (if applicable):**
 ```sql
--- paste your SQL here
+i.
+mysql> SELECT
+    ->     department,
+    ->     COUNT(*) AS employee_count,
+    ->     ROUND(AVG(salary), 2) AS avg_salary
+    -> FROM employee
+    -> GROUP BY department
+    -> HAVING AVG(salary) > 65000;
+
+ii.
+mysql> SELECT
+    ->     job_title,
+    ->     COUNT(*) AS headcount,
+    ->     ROUND(AVG(salary), 2) AS avg_salary
+    -> FROM employee
+    -> GROUP BY job_title
+    -> HAVING COUNT(*) >= 10 AND AVG(salary) > 60000;
 ```
 
 **Evidence (screenshot filename, output, or file reference in this folder):**
-_[e.g. `task4_output.png`, or paste console/query output here.]_
+mysql> SELECT
+    ->     department,
+    ->     COUNT(*) AS employee_count,
+    ->     ROUND(AVG(salary), 2) AS avg_salary
+    -> FROM employee
+    -> GROUP BY department
+    -> HAVING AVG(salary) > 65000;
++-------------+----------------+------------+
+| department  | employee_count | avg_salary |
++-------------+----------------+------------+
+| Sales       |            144 |   71799.65 |
+| Engineering |            125 |   75160.00 |
+| Finance     |             69 |   79513.04 |
++-------------+----------------+------------+
+3 rows in set (0.072 sec)
+
+mysql> SELECT
+    ->     job_title,
+    ->     COUNT(*) AS headcount,
+    ->     ROUND(AVG(salary), 2) AS avg_salary
+    -> FROM employee
+    -> GROUP BY job_title
+    -> HAVING COUNT(*) >= 10 AND AVG(salary) > 60000;
++-------------------+-----------+------------+
+| job_title         | headcount | avg_salary |
++-------------------+-----------+------------+
+| Sales Manager     |        49 |  109664.29 |
+| Account Manager   |        50 |   60663.00 |
+| Software Engineer |        44 |   85061.36 |
+| DevOps Engineer   |        42 |   84686.90 |
+| Financial Analyst |        24 |   66275.00 |
+| Finance Manager   |        24 |  119745.83 |
+| Support Lead      |        29 |   65175.86 |
+| HR Manager        |        18 |   97602.78 |
++-------------------+-----------+------------+
+8 rows in set (0.050 sec)
 
 **Reflection question:**
 _[Why must we use the `HAVING` clause here instead of the `WHERE` clause to filter by the average value?]_
+WHERE filters individual rows before grouping, while HAVING filters the grouped results after aggregate functions are calculated.
 
 ## Self-Check
 
