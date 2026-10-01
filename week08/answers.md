@@ -2,7 +2,7 @@
 
 Name: OBIEFULE DECLAN
 Student ID: 2510223
-GitHub repo: https://github.com/<STUDENT_GITHUB_USERNAME>/infoman1
+GitHub repo: https://github.com/sochimaobiefule-ship-it/infoman1
 Date submitted: 01/10/2026
 
 **Dataset check:** `SELECT COUNT(*) FROM employee;` returned: _[must be 500]_
