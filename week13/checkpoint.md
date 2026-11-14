@@ -130,10 +130,10 @@ In `src/main/resources/application.properties`, Spring Boot reads the MySQL conn
 
 | Requirement / Check | How I Verified It | Evidence File |
 | --- | --- | --- |
-| Schema builds with PK, FK, `UNIQUE`, and `CHECK` constraints | Ran `SHOW TABLES;` and `SHOW CREATE TABLE` on `order_items` and `products` in `infoman1_week13_test` | `evidence/01_schema_and_constraints.png` |
-| View shows live data after a base-table update | Queried `order_summary_view`, ran `UPDATE order_items SET quantity = 4 WHERE id = 1;`, and re-queried the view (`line_total` changed from `1200.00` to `4800.00`) | `evidence/02_view_before_after.png` |
-| Database blocks invalid `UNIQUE`, `FK`, and `CHECK` inserts | Tested duplicate SKU `'LAP-001'` (`ERROR 1062`), non-existent `user_id = 999` (`ERROR 1452`), and `stock_quantity = -3` (`ERROR 3819`) | `evidence/03_constraint_rejections.png` |
-| Running app reads real rows that match MySQL | Compared `SELECT` output from `webdev2_week8.products` against the browser product table and DevTools `GET /api/products` | `evidence/04_mysql_matching_rows.png`, `evidence/05_app_read_ui.png` |
+| Schema builds with PK, FK, `UNIQUE`, and `CHECK` constraints | Ran `SHOW TABLES;` and `SHOW CREATE TABLE` on `order_items` and `products` in `infoman1_week13_test` | `evidence/schema_and_constraints.png` |
+| View shows live data after a base-table update | Queried `order_summary_view`, ran `UPDATE order_items SET quantity = 4 WHERE id = 1;`, and re-queried the view (`line_total` changed from `1200.00` to `4800.00`) | `evidence/view_before_after.png` |
+| Database blocks invalid `UNIQUE`, `FK`, and `CHECK` inserts | Tested duplicate SKU `'LAP-001'` (`ERROR 1062`), non-existent `user_id = 999` (`ERROR 1452`), and `stock_quantity = -3` (`ERROR 3819`) | `evidence/constraint_rejections.png` |
+| Running app reads real rows that match MySQL | Compared `SELECT` output from `webdev2_week8.products` against the browser product table and DevTools `GET /api/products` | `evidence/mysql_matching_rows.png`, `evidence/app_read_ui.png` |
 
 ---
 
