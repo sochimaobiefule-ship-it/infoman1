@@ -53,8 +53,6 @@
   |        103 | TEST-USB-03 | Unsold USB Hub | Accessories |      25.00 |             15 |                0 |             0 |
   +------------+-------------+----------------+-------------+------------+----------------+------------------+---------------+
 
-```
-
 * **Deliberate Constraint Checks:** Rejected duplicate SKU `'TEST-LAP-01'` (`ERROR 1062`), invalid `user_id = 9999` (`ERROR 1452`), and parent delete on `product_id = 101` (`ERROR 1451`).
 * **Transaction Rollback Check:** Product `103` stock stayed at `13` and `rolled_back_order_count = 0` after `ERROR 1452` + `ROLLBACK`.
 * **Raw Terminal Log:** Saved in [evidence/verification_output.txt](evidence/verification_output.txt).
