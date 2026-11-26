@@ -1,0 +1,233 @@
+mysql> CREATE DATABASE IF NOT EXISTS webdev2_week16_test;
+Query OK, 1 row affected, 1 warning (0.694 sec)
+
+mysql> USE webdev2_week16_test;
+Database changed
+mysql> CREATE OR REPLACE VIEW order_summary_view AS
+    -> SELECT
+    ->     co.id AS order_id,
+    ->     co.order_date,
+    ->     co.status AS order_status,
+    ->     u.id AS customer_id,
+    ->     u.username AS customer_username,
+    ->     p.id AS product_id,
+    ->     p.name AS product_name,
+    ->     p.sku AS product_sku,
+    ->     oi.quantity,
+    ->     oi.price AS unit_price,
+    ->     (oi.quantity * oi.price) AS line_total
+    -> FROM customer_orders co
+    -> JOIN users u ON u.id = co.user_id
+    -> JOIN order_items oi ON oi.order_id = co.id
+    -> JOIN products p ON p.id = oi.product_id;
+Query OK, 0 rows affected (1.206 sec)
+
+mysql> CREATE OR REPLACE SQL SECURITY DEFINER VIEW product_sales_summary AS
+    -> SELECT
+    ->     p.id AS product_id,
+    ->     p.sku,
+    ->     p.name AS product_name,
+    ->     COALESCE(p.category, 'Uncategorized') AS category,
+    ->     p.price AS unit_price,
+    ->     p.stock_quantity,
+    ->     COALESCE(SUM(oi.quantity), 0) AS total_units_sold,
+    ->     COALESCE(SUM(oi.quantity * oi.price), 0.00) AS total_revenue
+    -> FROM products p
+    -> LEFT JOIN order_items oi ON oi.product_id = p.id
+    -> GROUP BY p.id, p.sku, p.name, p.category, p.price, p.stock_quantity;
+Query OK, 0 rows affected (0.205 sec)
+
+mysql> SET FOREIGN_KEY_CHECKS = 0;
+Query OK, 0 rows affected (0.098 sec)
+
+mysql> TRUNCATE TABLE order_items;
+Query OK, 0 rows affected (0.836 sec)
+
+mysql> TRUNCATE TABLE customer_orders;
+Query OK, 0 rows affected (0.605 sec)
+
+mysql> TRUNCATE TABLE products;
+Query OK, 0 rows affected (0.631 sec)
+
+mysql> TRUNCATE TABLE users;
+Query OK, 0 rows affected (0.809 sec)
+
+mysql> SET FOREIGN_KEY_CHECKS = 1;
+Query OK, 0 rows affected (0.005 sec)
+
+mysql> INSERT INTO users (id, username, email, role, password_hash) VALUES
+    ->     (1, 'test_buyer_1', 'buyer1@example.test', 'READER', '\$2a\$10\$placeholderhashvalue0000000000000000000000000000000001'),
+    ->     (2, 'test_manager_1', 'mgr1@example.test', 'MANAGER', '\$2a\$10\$placeholderhashvalue0000000000000000000000000000000002');
+Query OK, 2 rows affected (0.173 sec)
+Records: 2  Duplicates: 0  Warnings: 0
+
+mysql> INSERT INTO products (id, sku, name, category, price, stock_quantity) VALUES
+    ->     (101, 'TEST-LAP-01', 'Test Laptop', 'Electronics', 1000.00, 10),
+    ->     (102, 'TEST-MSE-02', 'Test Mouse', 'Electronics', 50.00, 20),
+    ->     (103, 'TEST-USB-03', 'Unsold USB Hub', 'Accessories', 25.00, 15);
+Query OK, 3 rows affected (0.117 sec)
+Records: 3  Duplicates: 0  Warnings: 0
+
+mysql> INSERT INTO customer_orders (id, user_id, order_date, status) VALUES
+    ->     (501, 1, '2026-11-25 09:00:00', 'CONFIRMED'),
+    ->     (502, 1, '2026-11-25 10:00:00', 'CONFIRMED');
+Query OK, 2 rows affected, 2 warnings (0.177 sec)
+Records: 2  Duplicates: 0  Warnings: 2
+
+mysql> INSERT INTO order_items (id, order_id, product_id, quantity, price) VALUES
+    ->     (901, 501, 101, 2, 1000.00),
+    ->     (902, 501, 102, 3, 50.00),
+    ->     (903, 502, 102, 1, 50.00);
+Query OK, 3 rows affected (0.130 sec)
+Records: 3  Duplicates: 0  Warnings: 0
+
+mysql> SELECT * FROM product_sales_summary ORDER BY product_id;
++------------+-------------+----------------+-------------+------------+----------------+------------------+---------------+
+| product_id | sku         | product_name   | category    | unit_price | stock_quantity | total_units_sold | total_revenue |
++------------+-------------+----------------+-------------+------------+----------------+------------------+---------------+
+|        101 | TEST-LAP-01 | Test Laptop    | Electronics |    1000.00 |             10 |                2 |          2000 |
+|        102 | TEST-MSE-02 | Test Mouse     | Electronics |      50.00 |             20 |                4 |           200 |
+|        103 | TEST-USB-03 | Unsold USB Hub | Accessories |      25.00 |             15 |                0 |             0 |
++------------+-------------+----------------+-------------+------------+----------------+------------------+---------------+
+3 rows in set (0.203 sec)
+
+mysql> SELECT * FROM order_summary_view ORDER BY order_id, product_id;
++----------+------------+--------------+-------------+-------------------+------------+--------------+-------------+----------+------------+------------+
+| order_id | order_date | order_status | customer_id | customer_username | product_id | product_name | product_sku | quantity | unit_price | line_total |
++----------+------------+--------------+-------------+-------------------+------------+--------------+-------------+----------+------------+------------+
+|      501 | 2026-11-25 | CONFIRMED    |           1 | test_buyer_1      |        101 | Test Laptop  | TEST-LAP-01 |        2 |       1000 |       2000 |
+|      501 | 2026-11-25 | CONFIRMED    |           1 | test_buyer_1      |        102 | Test Mouse   | TEST-MSE-02 |        3 |         50 |        150 |
+|      502 | 2026-11-25 | CONFIRMED    |           1 | test_buyer_1      |        102 | Test Mouse   | TEST-MSE-02 |        1 |         50 |         50 |
++----------+------------+--------------+-------------+-------------------+------------+--------------+-------------+----------+------------+------------+
+3 rows in set (0.045 sec)
+
+mysql> SELECT * FROM products WHERE id = 999999;
+Empty set (0.007 sec)
+
+mysql> INSERT INTO products (sku, name, category, price, stock_quantity)
+    -> VALUES ('TEST-LAP-01', 'Duplicate Laptop', 'Electronics', 999.00, 5);
+ERROR 1062 (23000): Duplicate entry 'TEST-LAP-01' for key 'products.UK_fhmd06dsmj6k0n90swsh8ie9g'
+mysql> INSERT INTO customer_orders (user_id, order_date, status)
+    -> VALUES (9999, '2026-11-25 11:00:00', 'CONFIRMED');
+ERROR 1452 (23000): Cannot add or update a child row: a foreign key constraint fails (`webdev2_week16_test`.`customer_orders`, CONSTRAINT `FKt8e9kp8f6kmy0a3rytsmkkr8g` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`))
+mysql> DELETE FROM products WHERE id = 101;
+ERROR 1451 (23000): Cannot delete or update a parent row: a foreign key constraint fails (`webdev2_week16_test`.`order_items`, CONSTRAINT `FKocimc7dtr037rh4ls4l95nlfi` FOREIGN KEY (`product_id`) REFERENCES `products` (`id`))
+mysql> SELECT id, sku, name, stock_quantity FROM products ORDER BY id;
++-----+-------------+----------------+----------------+
+| id  | sku         | name           | stock_quantity |
++-----+-------------+----------------+----------------+
+| 101 | TEST-LAP-01 | Test Laptop    |             10 |
+| 102 | TEST-MSE-02 | Test Mouse     |             20 |
+| 103 | TEST-USB-03 | Unsold USB Hub |             15 |
++-----+-------------+----------------+----------------+
+3 rows in set (0.009 sec)
+
+mysql> START TRANSACTION;
+Query OK, 0 rows affected (0.007 sec)
+
+mysql> INSERT INTO customer_orders (id, user_id, order_date, status)
+    -> VALUES (503, 1, '2026-11-25 12:00:00', 'CONFIRMED');
+Query OK, 1 row affected, 1 warning (0.012 sec)
+
+mysql> INSERT INTO order_items (id, order_id, product_id, quantity, price)
+    -> VALUES (904, 503, 103, 2, 25.00);
+Query OK, 1 row affected (0.006 sec)
+
+mysql> UPDATE products SET stock_quantity = stock_quantity - 2 WHERE id = 103;
+Query OK, 1 row affected (0.096 sec)
+Rows matched: 1  Changed: 1  Warnings: 0
+
+mysql> COMMIT;
+Query OK, 0 rows affected (0.104 sec)
+
+mysql> SELECT id, sku, stock_quantity FROM products WHERE id = 103;
++-----+-------------+----------------+
+| id  | sku         | stock_quantity |
++-----+-------------+----------------+
+| 103 | TEST-USB-03 |             13 |
++-----+-------------+----------------+
+1 row in set (0.007 sec)
+
+mysql> START TRANSACTION;
+Query OK, 0 rows affected (0.005 sec)
+
+mysql> UPDATE products SET stock_quantity = stock_quantity - 3 WHERE id = 103;
+Query OK, 1 row affected (0.013 sec)
+Rows matched: 1  Changed: 1  Warnings: 0
+
+mysql> INSERT INTO customer_orders (id, user_id, order_date, status)
+    -> VALUES (504, 9999, '2026-11-25 12:05:00', 'CONFIRMED');
+ERROR 1452 (23000): Cannot add or update a child row: a foreign key constraint fails (`webdev2_week16_test`.`customer_orders`, CONSTRAINT `FKt8e9kp8f6kmy0a3rytsmkkr8g` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`))
+mysql> ROLLBACK;
+Query OK, 0 rows affected (0.099 sec)
+
+mysql> SELECT id, sku, stock_quantity FROM products WHERE id = 103;
++-----+-------------+----------------+
+| id  | sku         | stock_quantity |
++-----+-------------+----------------+
+| 103 | TEST-USB-03 |             13 |
++-----+-------------+----------------+
+1 row in set (0.004 sec)
+
+mysql> SELECT COUNT(*) AS rolled_back_order_count FROM customer_orders WHERE id = 504;
++-------------------------+
+| rolled_back_order_count |
++-------------------------+
+|                       0 |
++-------------------------+
+1 row in set (0.094 sec)
+
+mysql> EXPLAIN
+    -> SELECT
+    ->     co.id AS order_id,
+    -> ^C
+mysql> EXPLAIN
+    -> SELECT
+    ->     co.id AS order_id,
+    ->     co.order_date,
+    ->     u.username,
+    ->     p.sku,
+    ->     oi.quantity,
+    ->     oi.price
+    -> FROM customer_orders co
+    -> JOIN users u ON u.id = co.user_id
+    -> JOIN order_items oi ON oi.order_id = co.id
+    -> JOIN products p ON p.id = oi.product_id
+    -> WHERE co.status = 'CONFIRMED'
+    ->   AND p.category = 'Electronics'
+    -> ORDER BY co.order_date DESC;
++----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+| EXPLAIN                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
++----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+| -> Nested loop inner join  (cost=2.75 rows=1.5)
+    -> Nested loop inner join  (cost=1.93 rows=4.5)
+        -> Nested loop inner join  (cost=1.1 rows=3)
+            -> Sort: co.order_date DESC  (cost=0.55 rows=3)
+                -> Filter: ((co.`status` = 'CONFIRMED') and (co.user_id is not null))  (cost=0.55 rows=3)
+                    -> Table scan on co  (cost=0.55 rows=3)
+            -> Single-row index lookup on u using PRIMARY (id = co.user_id)  (cost=0.35 rows=1)
+        -> Index lookup on oi using FKb2vrrqy10nnyqhb5ergl5498r (order_id = co.id)  (cost=0.525 rows=1.5)
+    -> Filter: (p.category = 'Electronics')  (cost=0.272 rows=0.333)
+        -> Single-row index lookup on p using PRIMARY (id = oi.product_id)  (cost=0.272 rows=1)
+ |
++----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+1 row in set (0.083 sec)
+
+mysql> SHOW GRANTS FOR 'webdev2_app'@'localhost';
++--------------------------------------------------------------------------------------------------------------------------------------+
+| Grants for webdev2_app@localhost                                                                                                     |
++--------------------------------------------------------------------------------------------------------------------------------------+
+| GRANT USAGE ON *.* TO `webdev2_app`@`localhost`                                                                                      |
+| GRANT SELECT, INSERT, UPDATE, DELETE, CREATE, DROP, REFERENCES, INDEX, ALTER ON `webdev2_week16_test`.* TO `webdev2_app`@`localhost` |
+| GRANT SELECT, INSERT, UPDATE, DELETE ON `webdev2_week8`.* TO `webdev2_app`@`localhost`                                               |
++--------------------------------------------------------------------------------------------------------------------------------------+
+3 rows in set (0.117 sec)
+
+mysql> SHOW GRANTS FOR 'webdev2_report'@'localhost';
++-----------------------------------------------------------------------------------------+
+| Grants for webdev2_report@localhost                                                     |
++-----------------------------------------------------------------------------------------+
+| GRANT USAGE ON *.* TO `webdev2_report`@`localhost`                                      |
+| GRANT SELECT ON `webdev2_week8`.`product_sales_summary` TO `webdev2_report`@`localhost` |
++-----------------------------------------------------------------------------------------+
+2 rows in set (0.005 sec)
